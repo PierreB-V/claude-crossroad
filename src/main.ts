@@ -1,3 +1,5 @@
+import { DEFAULT_EVALUATION, evaluatePlan } from './ga/fitness';
+import { websterPlan } from './ga/webster';
 import { compile, type CompiledIntersection } from './model/intersection';
 import { PRESETS } from './model/presets';
 import type { IntersectionConfig, MovementId } from './model/types';
@@ -17,7 +19,8 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const presetSelect = $<HTMLSelectElement>('preset');
 const errorsList = $<HTMLUListElement>('errors');
 const planList = $<HTMLOListElement>('plan');
-const cycleLabel = $<HTMLSpanElement>('cycle');
+const cycleLabel = $<HTMLParagraphElement>('cycle');
+const evaluationList = $<HTMLDListElement>('evaluation');
 const playButton = $<HTMLButtonElement>('play');
 const speedSelect = $<HTMLSelectElement>('speed');
 const seedInput = $<HTMLInputElement>('seed');
@@ -38,19 +41,26 @@ let accumulator = 0;
 let lastFrame = 0;
 let lastStats = 0;
 let activePhaseKey = '';
+let planInfo = '';
 
 // --- state changes ---------------------------------------------------------
 
 function loadConfig(config: IntersectionConfig): void {
   ix = compile(structuredClone(config));
-  plan = simplePlan(ix);
+  setPlan(simplePlan(ix), 'Equal split');
   selection = { kind: 'none' };
   extent = defaultExtent(ix);
   restart();
   renderStaticSidebar();
 }
 
+function setPlan(next: SignalPlan, info: string): void {
+  plan = next;
+  planInfo = info;
+}
+
 function restart(): void {
+  evaluationList.replaceChildren();
   sim = new Simulation(ix, plan, { seed: Number(seedInput.value) || 0 });
   accumulator = 0;
   activePhaseKey = '';
@@ -98,13 +108,14 @@ function renderPlan(): void {
       input.onchange = () => {
         const g = Math.round(Number(input.value));
         phase.green = Math.min(MAX_GREEN, Math.max(MIN_GREEN, Number.isFinite(g) ? g : MIN_GREEN));
+        if (!planInfo.endsWith('(edited)')) planInfo += ' (edited)';
         restart();
       };
       li.append(chips, input, document.createTextNode('s'));
       return li;
     }),
   );
-  cycleLabel.textContent = `Cycle: ${cycleLength(plan)} s`;
+  cycleLabel.textContent = `${planInfo} · cycle ${cycleLength(plan)} s`;
 }
 
 function highlightActivePhase(): void {
@@ -115,6 +126,36 @@ function highlightActivePhase(): void {
   [...planList.children].forEach((li, i) => {
     li.className = i === s.phase ? `active-${s.stage}` : '';
   });
+}
+
+function definitionList(target: HTMLDListElement, rows: [string, string][]): void {
+  target.replaceChildren(
+    ...rows.flatMap(([k, v]) => {
+      const dt = document.createElement('dt');
+      dt.textContent = k;
+      const dd = document.createElement('dd');
+      dd.textContent = v;
+      return [dt, dd];
+    }),
+  );
+}
+
+function evaluateCurrentPlan(): void {
+  const t0 = performance.now();
+  const e = evaluatePlan(ix, plan, DEFAULT_EVALUATION);
+  const ms = Math.round(performance.now() - t0);
+  const m = e.metrics;
+  definitionList(evaluationList, [
+    ['Fitness (lower = better)', e.fitness.toFixed(1)],
+    ['Avg delay', `${m.avgDelay.toFixed(1)} s`],
+    ['Avg stops', m.avgStops.toFixed(2)],
+    ['Max queue', `${m.maxQueue.toFixed(1)} veh`],
+    ['Unserved at end', m.unserved.toFixed(1)],
+    [
+      'Evaluation',
+      `${DEFAULT_EVALUATION.seeds.length} × ${(DEFAULT_EVALUATION.warmup + DEFAULT_EVALUATION.duration) / 60} min, ${ms} ms`,
+    ],
+  ]);
 }
 
 function renderStats(): void {
@@ -133,15 +174,7 @@ function renderStats(): void {
     ['Max queue', `${m.maxQueue} veh`],
     ['Throughput', `${Math.round(m.throughput)} veh/h`],
   ];
-  statsList.replaceChildren(
-    ...rows.flatMap(([k, v]) => {
-      const dt = document.createElement('dt');
-      dt.textContent = k;
-      const dd = document.createElement('dd');
-      dd.textContent = v;
-      return [dt, dd];
-    }),
-  );
+  definitionList(statsList, rows);
   highlightActivePhase();
 }
 
@@ -257,10 +290,17 @@ $<HTMLButtonElement>('step').onclick = () => {
   renderStats();
 };
 $<HTMLButtonElement>('restart').onclick = () => restart();
-$<HTMLButtonElement>('reset-plan').onclick = () => {
-  plan = simplePlan(ix);
+$<HTMLButtonElement>('plan-simple').onclick = () => {
+  setPlan(simplePlan(ix), 'Equal split');
   restart();
 };
+$<HTMLButtonElement>('plan-webster').onclick = () => {
+  const w = websterPlan(ix);
+  const c0 = Number.isFinite(w.optimalCycle) ? `${w.optimalCycle.toFixed(0)} s` : '∞';
+  setPlan(w.plan, `Webster: Y = ${w.Y.toFixed(2)}, C₀ = ${c0}${w.oversaturated ? ' (oversaturated)' : ''}`);
+  restart();
+};
+$<HTMLButtonElement>('evaluate').onclick = () => evaluateCurrentPlan();
 seedInput.onchange = () => restart();
 canvas.addEventListener(
   'wheel',

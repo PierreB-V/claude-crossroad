@@ -21,10 +21,13 @@
           <h2>Signal plan</h2>
           <p class="hint">Green time per phase, followed by 3 s yellow and 2 s all-red. Edit to see the effect.</p>
           <ol id="plan" class="plan"></ol>
+          <p id="cycle" class="hint"></p>
           <div class="row">
-            <span id="cycle" class="muted"></span>
-            <button id="reset-plan" type="button">Reset plan</button>
+            <button id="plan-simple" type="button" title="Greedy phases, 20 s green each">Equal split</button>
+            <button id="plan-webster" type="button" title="Webster's classic fixed-time formula">Webster</button>
+            <button id="evaluate" type="button" title="Run the headless evaluation used by the GA">Evaluate</button>
           </div>
+          <dl id="evaluation" class="stats"></dl>
         </section>
         <section>
           <h2>Simulation</h2>
