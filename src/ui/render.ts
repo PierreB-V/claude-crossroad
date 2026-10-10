@@ -6,6 +6,8 @@ export type PathStyle = 'normal' | 'strong' | 'conflict' | 'faint' | 'hidden';
 
 export interface RenderOptions {
   pathStyle?: (movement: MovementId) => PathStyle;
+  /** Metres from the centre to the edge of the view (defaults to box + 30 m). */
+  extent?: number;
 }
 
 const COLORS = {
@@ -26,12 +28,15 @@ export const ARM_COLORS: Record<ArmId, string> = {
   W: '#7aa7ff',
 };
 
-/** Approach length shown around the box; the rest of the approach is off-screen. */
+/** Approach length shown around the box by default; the rest of the approach is off-screen. */
 const VIEW_MARGIN = 30;
 
+export function defaultExtent(ix: CompiledIntersection): number {
+  return ix.halfSize + Math.min(ix.approachLength, VIEW_MARGIN);
+}
+
 /** Metres → CSS pixels for a canvas of the given size. */
-export function worldScale(ix: CompiledIntersection, width: number, height: number): number {
-  const extent = ix.halfSize + Math.min(ix.approachLength, VIEW_MARGIN);
+export function worldScale(width: number, height: number, extent: number): number {
   return (Math.min(width, height) / (2 * extent)) * 0.98;
 }
 
@@ -47,7 +52,7 @@ export function drawIntersection(
   ctx.fillStyle = COLORS.grass;
   ctx.fillRect(0, 0, width, height);
 
-  const k = worldScale(ix, width, height);
+  const k = worldScale(width, height, opts.extent ?? defaultExtent(ix));
   ctx.setTransform(dpr * k, 0, 0, dpr * k, (dpr * width) / 2, (dpr * height) / 2);
 
   const h = ix.halfSize;

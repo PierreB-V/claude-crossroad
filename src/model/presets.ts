@@ -11,10 +11,10 @@ export const PRESETS: readonly IntersectionConfig[] = [
   withDefaultLaneTurns({
     name: 'Balanced 4-way',
     arms: {
-      N: arm(2, 2, [120, 400, 100]),
-      E: arm(2, 2, [120, 400, 100]),
-      S: arm(2, 2, [120, 400, 100]),
-      W: arm(2, 2, [120, 400, 100]),
+      N: arm(3, 2, [120, 450, 100]),
+      E: arm(3, 2, [120, 450, 100]),
+      S: arm(3, 2, [120, 450, 100]),
+      W: arm(3, 2, [120, 450, 100]),
     },
   }),
   withDefaultLaneTurns({

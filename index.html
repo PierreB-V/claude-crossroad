@@ -18,6 +18,35 @@
           <ul id="errors" class="errors"></ul>
         </section>
         <section>
+          <h2>Signal plan</h2>
+          <p class="hint">Green time per phase, followed by 3 s yellow and 2 s all-red. Edit to see the effect.</p>
+          <ol id="plan" class="plan"></ol>
+          <div class="row">
+            <span id="cycle" class="muted"></span>
+            <button id="reset-plan" type="button">Reset plan</button>
+          </div>
+        </section>
+        <section>
+          <h2>Simulation</h2>
+          <div class="row">
+            <button id="play" type="button" class="primary">Play</button>
+            <button id="step" type="button">Step</button>
+            <button id="restart" type="button">Restart</button>
+            <select id="speed" aria-label="Speed">
+              <option value="1">1×</option>
+              <option value="2">2×</option>
+              <option value="5" selected>5×</option>
+              <option value="10">10×</option>
+              <option value="30">30×</option>
+            </select>
+          </div>
+          <div class="row">
+            <label for="seed" class="inline">Seed</label>
+            <input id="seed" type="number" value="1" min="0" step="1" />
+          </div>
+          <dl id="stats" class="stats"></dl>
+        </section>
+        <section>
           <h2>Candidate phases</h2>
           <p class="hint">Maximal sets of movements that can be green together. Click one to highlight it.</p>
           <ol id="phases" class="phases"></ol>
@@ -28,7 +57,10 @@
           <div id="matrix"></div>
         </section>
       </aside>
-      <div id="stage"><canvas id="canvas"></canvas></div>
+      <div id="stage">
+        <canvas id="canvas"></canvas>
+        <div class="overlay">Scroll to zoom</div>
+      </div>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>

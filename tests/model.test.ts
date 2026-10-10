@@ -41,7 +41,8 @@ describe('geometry', () => {
 describe('lanes', () => {
   it('generates sensible defaults', () => {
     expect(defaultLaneTurns(['L', 'S', 'R'], 1)).toEqual([['L', 'S', 'R']]);
-    expect(defaultLaneTurns(['L', 'S', 'R'], 3)).toEqual([['L', 'S'], ['S'], ['S', 'R']]);
+    expect(defaultLaneTurns(['L', 'S', 'R'], 2)).toEqual([['L', 'S'], ['S', 'R']]);
+    expect(defaultLaneTurns(['L', 'S', 'R'], 3)).toEqual([['L'], ['S'], ['S', 'R']]);
     expect(defaultLaneTurns(['L', 'R'], 2)).toEqual([['L'], ['R']]);
     expect(defaultLaneTurns(['L', 'R'], 3)).toEqual([['L'], ['L'], ['R']]);
   });

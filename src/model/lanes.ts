@@ -11,7 +11,8 @@ export function defaultLaneTurns(available: readonly Turn[], n: number): Turn[][
   const lanes: Turn[][] = Array.from({ length: n }, () => []);
   if (has('S')) {
     for (const lane of lanes) lane.push('S');
-    if (has('L')) lanes[0].unshift('L');
+    // From 3 lanes on, the leftmost becomes a dedicated left-turn lane.
+    if (has('L')) lanes[0] = n >= 3 ? ['L'] : ['L', 'S'];
     if (has('R')) lanes[n - 1].push('R');
   } else if (has('L') && has('R')) {
     // T-junction stem: left half turns left, right half turns right.
