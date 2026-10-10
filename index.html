@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>XRoad — signal timing GA</title>
+  </head>
+  <body>
+    <header>
+      <h1>XRoad</h1>
+      <span class="subtitle">Traffic-light timing optimized by a genetic algorithm</span>
+    </header>
+    <main>
+      <aside id="sidebar">
+        <section>
+          <label for="preset">Preset</label>
+          <select id="preset"></select>
+          <ul id="errors" class="errors"></ul>
+        </section>
+        <section>
+          <h2>Candidate phases</h2>
+          <p class="hint">Maximal sets of movements that can be green together. Click one to highlight it.</p>
+          <ol id="phases" class="phases"></ol>
+        </section>
+        <section>
+          <h2>Conflicts</h2>
+          <p class="hint">Click a movement to show what it conflicts with.</p>
+          <div id="matrix"></div>
+        </section>
+      </aside>
+      <div id="stage"><canvas id="canvas"></canvas></div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,175 @@
+:root {
+  --bg: #16181c;
+  --panel: #1f2228;
+  --border: #2e323a;
+  --text: #e4e6ea;
+  --muted: #8b919c;
+  --accent: #4cc9a6;
+  --danger: #ff6b6b;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+h2 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+
+.subtitle,
+.hint {
+  color: var(--muted);
+}
+
+.hint {
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+#sidebar {
+  width: 340px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 12px 16px;
+}
+
+#sidebar section {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+select {
+  width: 100%;
+  padding: 6px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+#stage {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+
+#canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.errors {
+  color: var(--danger);
+  padding-left: 18px;
+  margin: 8px 0 0;
+}
+
+.phases {
+  padding-left: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.phases li {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.phases li.selected,
+.phases li:hover {
+  border-color: var(--accent);
+}
+
+.chip {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: #111;
+}
+
+table.matrix {
+  border-collapse: collapse;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+}
+
+table.matrix th,
+table.matrix td {
+  width: 22px;
+  height: 20px;
+  text-align: center;
+  padding: 0;
+}
+
+table.matrix th {
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: normal;
+}
+
+table.matrix th.selected {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+table.matrix td.x {
+  background: rgba(255, 77, 77, 0.55);
+}
+
+table.matrix td.ok {
+  background: rgba(76, 201, 166, 0.15);
+}
+
+table.matrix td.self {
+  background: var(--border);
+}
