@@ -94,9 +94,9 @@ src/ui/      editor, optimizer panel, chart, plan timeline, sim view
 
 ## 7. Milestones
 
-1. **Model** — types, geometry, lane defaults, conflicts, phase sets, static render, tests.
-2. **Simulation** — engine + animated replay of a hand-written plan.
-3. **Metrics & baseline** — metrics collection, Webster plan.
-4. **GA** — single-threaded GA + convergence chart.
-5. **Workers & comparison** — worker pool, plan timeline, side-by-side replay.
+1. ✅ **Model** — types, geometry, lane defaults, conflicts, phase sets, static render, tests.
+2. ✅ **Simulation** — engine + animated replay of a hand-written plan.
+3. ✅ **Metrics & baseline** — metrics collection, Webster plan.
+4. ✅ **GA** — GA + convergence chart, evaluated in a Web Worker pool (pulled forward from 5).
+5. **Comparison** — plan timeline, side-by-side replay (Webster vs GA).
 6. **Editor & polish** — interactive editor, presets, JSON save/load.

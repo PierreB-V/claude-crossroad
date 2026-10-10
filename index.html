@@ -17,48 +17,108 @@
           <select id="preset"></select>
           <ul id="errors" class="errors"></ul>
         </section>
-        <section>
-          <h2>Signal plan</h2>
-          <p class="hint">Green time per phase, followed by 3 s yellow and 2 s all-red. Edit to see the effect.</p>
-          <ol id="plan" class="plan"></ol>
-          <p id="cycle" class="hint"></p>
-          <div class="row">
-            <button id="plan-simple" type="button" title="Greedy phases, 20 s green each">Equal split</button>
-            <button id="plan-webster" type="button" title="Webster's classic fixed-time formula">Webster</button>
-            <button id="evaluate" type="button" title="Run the headless evaluation used by the GA">Evaluate</button>
-          </div>
-          <dl id="evaluation" class="stats"></dl>
-        </section>
-        <section>
-          <h2>Simulation</h2>
-          <div class="row">
-            <button id="play" type="button" class="primary">Play</button>
-            <button id="step" type="button">Step</button>
-            <button id="restart" type="button">Restart</button>
-            <select id="speed" aria-label="Speed">
-              <option value="1">1×</option>
-              <option value="2">2×</option>
-              <option value="5" selected>5×</option>
-              <option value="10">10×</option>
-              <option value="30">30×</option>
-            </select>
-          </div>
-          <div class="row">
-            <label for="seed" class="inline">Seed</label>
-            <input id="seed" type="number" value="1" min="0" step="1" />
-          </div>
-          <dl id="stats" class="stats"></dl>
-        </section>
-        <section>
-          <h2>Candidate phases</h2>
-          <p class="hint">Maximal sets of movements that can be green together. Click one to highlight it.</p>
-          <ol id="phases" class="phases"></ol>
-        </section>
-        <section>
-          <h2>Conflicts</h2>
-          <p class="hint">Click a movement to show what it conflicts with.</p>
-          <div id="matrix"></div>
-        </section>
+
+        <nav class="tabs" role="tablist">
+          <button type="button" role="tab" data-tab="sim" class="active">Plan &amp; simulation</button>
+          <button type="button" role="tab" data-tab="ga">Optimizer</button>
+          <button type="button" role="tab" data-tab="model">Intersection</button>
+        </nav>
+
+        <div class="tab-panel" data-panel="sim">
+          <section>
+            <h2>Signal plan</h2>
+            <p class="hint">Green time per phase, followed by 3 s yellow and 2 s all-red. Edit to see the effect.</p>
+            <ol id="plan" class="plan"></ol>
+            <p id="cycle" class="hint"></p>
+            <div class="row">
+              <button id="plan-simple" type="button" title="Greedy phases, 20 s green each">Equal split</button>
+              <button id="plan-webster" type="button" title="Webster's classic fixed-time formula">Webster</button>
+              <button id="evaluate" type="button" title="Run the headless evaluation used by the GA">Evaluate</button>
+            </div>
+            <dl id="evaluation" class="stats"></dl>
+          </section>
+          <section>
+            <h2>Simulation</h2>
+            <div class="row">
+              <button id="play" type="button" class="primary">Play</button>
+              <button id="step" type="button">Step</button>
+              <button id="restart" type="button">Restart</button>
+              <select id="speed" aria-label="Speed">
+                <option value="1">1×</option>
+                <option value="2">2×</option>
+                <option value="5" selected>5×</option>
+                <option value="10">10×</option>
+                <option value="30">30×</option>
+              </select>
+            </div>
+            <div class="row">
+              <label for="seed" class="inline">Seed</label>
+              <input id="seed" type="number" value="1" min="0" step="1" />
+            </div>
+            <dl id="stats" class="stats"></dl>
+          </section>
+        </div>
+
+        <div class="tab-panel" data-panel="ga" hidden>
+          <section>
+            <h2>Genetic algorithm</h2>
+            <div class="form-grid">
+              <label for="ga-pop">Population</label>
+              <input id="ga-pop" type="number" value="40" min="6" max="200" step="2" />
+              <label for="ga-gens">Generations</label>
+              <input id="ga-gens" type="number" value="40" min="1" max="500" />
+              <label for="ga-mut">Mutation rate</label>
+              <input id="ga-mut" type="number" value="0.25" min="0" max="1" step="0.05" />
+              <label for="ga-seeds">Seeds / evaluation</label>
+              <input id="ga-seeds" type="number" value="2" min="1" max="5" />
+              <label for="ga-webster">Start from Webster</label>
+              <input id="ga-webster" type="checkbox" />
+            </div>
+          </section>
+          <section>
+            <h2>Fitness weights</h2>
+            <p class="hint">Fitness = Σ weight × metric, lower is better.</p>
+            <div class="form-grid">
+              <label for="w-delay">Delay (per s)</label>
+              <input id="w-delay" type="number" value="1" min="0" step="0.1" />
+              <label for="w-stops">Stops (per stop)</label>
+              <input id="w-stops" type="number" value="5" min="0" step="0.5" />
+              <label for="w-queue">Max queue (per veh)</label>
+              <input id="w-queue" type="number" value="0.5" min="0" step="0.1" />
+              <label for="w-unserved">Unserved (per veh)</label>
+              <input id="w-unserved" type="number" value="0.5" min="0" step="0.1" />
+            </div>
+          </section>
+          <section>
+            <div class="row">
+              <button id="ga-run" type="button" class="primary">Start</button>
+              <button id="ga-reset" type="button">Reset</button>
+            </div>
+            <p id="ga-status" class="hint"></p>
+            <div id="ga-chart"></div>
+          </section>
+          <section>
+            <h2>Best plan</h2>
+            <ol id="ga-best" class="plan"></ol>
+            <dl id="ga-best-stats" class="stats"></dl>
+            <div class="row">
+              <button id="ga-use" type="button" disabled>Replay best plan</button>
+            </div>
+          </section>
+        </div>
+
+        <div class="tab-panel" data-panel="model" hidden>
+          <section>
+            <h2>Candidate phases</h2>
+            <p class="hint">Maximal sets of movements that can be green together. Click one to highlight it.</p>
+            <ol id="phases" class="phases"></ol>
+          </section>
+          <section>
+            <h2>Conflicts</h2>
+            <p class="hint">Click a movement to show what it conflicts with.</p>
+            <div id="matrix"></div>
+          </section>
+        </div>
       </aside>
       <div id="stage">
         <canvas id="canvas"></canvas>

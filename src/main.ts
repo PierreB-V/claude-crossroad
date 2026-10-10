@@ -4,15 +4,18 @@ import { compile, type CompiledIntersection } from './model/intersection';
 import { PRESETS } from './model/presets';
 import type { IntersectionConfig, MovementId } from './model/types';
 import { EXIT_LENGTH, Simulation } from './sim/engine';
-import { cycleLength, MAX_GREEN, MIN_GREEN, type SignalPlan } from './sim/signal';
+import { cycleLength, type SignalPlan } from './sim/signal';
 import { simplePlan } from './sim/simplePlan';
-import { ARM_COLORS, defaultExtent, drawIntersection, type PathStyle } from './ui/render';
+import { chip, definitionList, renderPlanList } from './ui/chips';
+import { OptimizerPanel } from './ui/optimizer';
+import { defaultExtent, drawIntersection, type PathStyle } from './ui/render';
 import { drawBacklog, drawSignals, drawVehicles } from './ui/simRender';
 import './style.css';
 
 type Selection = { kind: 'none' } | { kind: 'phase'; index: number } | { kind: 'movement'; id: MovementId };
+type Tab = 'sim' | 'ga' | 'model';
 
-/** Simulated seconds per animation frame are capped to keep the UI responsive. */
+/** Simulation steps per animation frame are capped to keep the UI responsive. */
 const MAX_STEPS_PER_FRAME = 400;
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -33,6 +36,7 @@ const ctx = canvas.getContext('2d')!;
 
 let ix: CompiledIntersection;
 let plan: SignalPlan;
+let planInfo = '';
 let sim: Simulation;
 let selection: Selection = { kind: 'none' };
 let playing = false;
@@ -41,7 +45,16 @@ let accumulator = 0;
 let lastFrame = 0;
 let lastStats = 0;
 let activePhaseKey = '';
-let planInfo = '';
+
+const optimizer = new OptimizerPanel({
+  intersection: () => ix,
+  usePlan: (next, label) => {
+    setPlan(next, label);
+    restart();
+    showTab('sim');
+    setPlaying(true);
+  },
+});
 
 // --- state changes ---------------------------------------------------------
 
@@ -50,20 +63,21 @@ function loadConfig(config: IntersectionConfig): void {
   setPlan(simplePlan(ix), 'Equal split');
   selection = { kind: 'none' };
   extent = defaultExtent(ix);
+  optimizer.reset();
   restart();
-  renderStaticSidebar();
+  renderModelTab();
 }
 
 function setPlan(next: SignalPlan, info: string): void {
-  plan = next;
+  plan = structuredClone(next);
   planInfo = info;
 }
 
 function restart(): void {
-  evaluationList.replaceChildren();
   sim = new Simulation(ix, plan, { seed: Number(seedInput.value) || 0 });
   accumulator = 0;
   activePhaseKey = '';
+  evaluationList.replaceChildren();
   renderPlan();
   renderStats();
 }
@@ -79,42 +93,28 @@ function select(next: Selection): void {
     (next.kind === 'phase' && selection.kind === 'phase' && next.index === selection.index) ||
     (next.kind === 'movement' && selection.kind === 'movement' && next.id === selection.id);
   selection = same ? { kind: 'none' } : next;
-  renderStaticSidebar();
+  renderModelTab();
+}
+
+function showTab(tab: Tab): void {
+  document.querySelectorAll<HTMLButtonElement>('.tabs button').forEach((b) => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  document.querySelectorAll<HTMLElement>('.tab-panel').forEach((p) => {
+    p.hidden = p.dataset.panel !== tab;
+  });
+  if (tab !== 'model') selection = { kind: 'none' };
+  if (tab === 'ga') optimizer.refresh();
 }
 
 // --- sidebar ---------------------------------------------------------------
 
-function chip(id: MovementId): HTMLSpanElement {
-  const span = document.createElement('span');
-  span.className = 'chip';
-  span.textContent = id;
-  span.style.background = ARM_COLORS[id[0] as keyof typeof ARM_COLORS];
-  return span;
-}
-
 function renderPlan(): void {
-  planList.replaceChildren(
-    ...plan.phases.map((phase) => {
-      const li = document.createElement('li');
-      const chips = document.createElement('div');
-      chips.className = 'chips';
-      chips.append(...phase.movements.map(chip));
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.min = String(MIN_GREEN);
-      input.max = String(MAX_GREEN);
-      input.value = String(phase.green);
-      input.title = 'Green time (s)';
-      input.onchange = () => {
-        const g = Math.round(Number(input.value));
-        phase.green = Math.min(MAX_GREEN, Math.max(MIN_GREEN, Number.isFinite(g) ? g : MIN_GREEN));
-        if (!planInfo.endsWith('(edited)')) planInfo += ' (edited)';
-        restart();
-      };
-      li.append(chips, input, document.createTextNode('s'));
-      return li;
-    }),
-  );
+  renderPlanList(planList, plan, (phase, green) => {
+    plan.phases[phase].green = green;
+    if (!planInfo.endsWith('(edited)')) planInfo += ' (edited)';
+    restart();
+  });
   cycleLabel.textContent = `${planInfo} · cycle ${cycleLength(plan)} s`;
 }
 
@@ -128,33 +128,19 @@ function highlightActivePhase(): void {
   });
 }
 
-function definitionList(target: HTMLDListElement, rows: [string, string][]): void {
-  target.replaceChildren(
-    ...rows.flatMap(([k, v]) => {
-      const dt = document.createElement('dt');
-      dt.textContent = k;
-      const dd = document.createElement('dd');
-      dd.textContent = v;
-      return [dt, dd];
-    }),
-  );
-}
-
 function evaluateCurrentPlan(): void {
   const t0 = performance.now();
   const e = evaluatePlan(ix, plan, DEFAULT_EVALUATION);
   const ms = Math.round(performance.now() - t0);
   const m = e.metrics;
+  const minutes = (DEFAULT_EVALUATION.warmup + DEFAULT_EVALUATION.duration) / 60;
   definitionList(evaluationList, [
     ['Fitness (lower = better)', e.fitness.toFixed(1)],
     ['Avg delay', `${m.avgDelay.toFixed(1)} s`],
     ['Avg stops', m.avgStops.toFixed(2)],
     ['Max queue', `${m.maxQueue.toFixed(1)} veh`],
     ['Unserved at end', m.unserved.toFixed(1)],
-    [
-      'Evaluation',
-      `${DEFAULT_EVALUATION.seeds.length} × ${(DEFAULT_EVALUATION.warmup + DEFAULT_EVALUATION.duration) / 60} min, ${ms} ms`,
-    ],
+    ['Evaluation', `${DEFAULT_EVALUATION.seeds.length} × ${minutes} min, ${ms} ms`],
   ]);
 }
 
@@ -163,7 +149,7 @@ function renderStats(): void {
   const s = sim.signals.status(sim.time);
   let onRoad = 0;
   for (const _ of sim.vehicles()) onRoad++;
-  const rows: [string, string][] = [
+  definitionList(statsList, [
     ['Time', formatTime(sim.time)],
     ['Phase', `${s.phase + 1} · ${s.stage} · ${Math.ceil(s.remaining)} s`],
     ['Vehicles on road', String(onRoad)],
@@ -173,8 +159,7 @@ function renderStats(): void {
     ['Avg stops', m.avgStops.toFixed(2)],
     ['Max queue', `${m.maxQueue} veh`],
     ['Throughput', `${Math.round(m.throughput)} veh/h`],
-  ];
-  definitionList(statsList, rows);
+  ]);
   highlightActivePhase();
 }
 
@@ -183,7 +168,7 @@ function formatTime(t: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
-function renderStaticSidebar(): void {
+function renderModelTab(): void {
   errorsList.replaceChildren(
     ...ix.errors.map((e) => {
       const li = document.createElement('li');
@@ -283,6 +268,9 @@ function frame(now: number): void {
 
 PRESETS.forEach((p, i) => presetSelect.add(new Option(p.name, String(i))));
 presetSelect.onchange = () => loadConfig(PRESETS[Number(presetSelect.value)]);
+document.querySelectorAll<HTMLButtonElement>('.tabs button').forEach((b) => {
+  b.onclick = () => showTab(b.dataset.tab as Tab);
+});
 playButton.onclick = () => setPlaying(!playing);
 $<HTMLButtonElement>('step').onclick = () => {
   setPlaying(false);
